@@ -9,14 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Tests — 2026-10-16
 
-- contracts/vesting/src/lib.rs: added `test_revoke_before_cliff` (#56).
-  Creates a schedule with `cliff_duration=100` / `total_duration=200` /
-  `total_amount=100_000`, advances ledger time to `start + 50` (halfway
-  through the cliff, zero tokens vested), then calls `revoke()`.  Asserts:
-  return value `== 100_000` (all unvested), beneficiary balance `== 0`,
-  recipient balance `== 100_000`, and `schedule.status == Revoked`.
-  Also fixed a pre-existing unused-variable lint warning in
-  `test_revoke_cei_state_and_balances`. All 54 vesting tests pass.
+- backend/src/routes/vesting.test.js: expanded test coverage for
+  `GET /api/vesting/beneficiary/:addr` and `GET /api/vesting/count` (#76).
+  Added 9 new tests across the two describe blocks:
+  - `GET /beneficiary/:addr`: correct beneficiary address reflected in
+    response, `scheduleIds` is an array, `contractId` present, different
+    address values work, `contractId` query-param override honoured.
+  - `GET /count`: `success: true`, `count` is a number, `contractId` present,
+    `contractId` query-param override honoured.
+  All 61 backend tests pass.
+
+### Changed — 2026-10-16
+
+- backend/src/routes/vesting.js: removed unused imports `nativeToScVal`,
+  `Address`, `xdr` (from `@stellar/stellar-sdk`) and `simulateContractCall`
+  (from `../services/stellar`) (#79). These were dead-code left over from an
+  incomplete wiring of live contract calls and produced four ESLint
+  `no-unused-vars` warnings in CI. No behaviour changes; all 54 backend tests
+  still pass and `npm run lint` reports zero warnings for `vesting.js`.
 
 ### Changed — 2026-10-16
 
