@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Tests — 2026-10-16
+
+- backend/src/routes/vesting.test.js: expanded test coverage for
+  `GET /api/vesting/beneficiary/:addr` and `GET /api/vesting/count` (#76).
+  Added 9 new tests across the two describe blocks:
+  - `GET /beneficiary/:addr`: correct beneficiary address reflected in
+    response, `scheduleIds` is an array, `contractId` present, different
+    address values work, `contractId` query-param override honoured.
+  - `GET /count`: `success: true`, `count` is a number, `contractId` present,
+    `contractId` query-param override honoured.
+  All 61 backend tests pass.
+
 ### Changed — 2026-10-16
 
 - contracts/token/src/lib.rs: added `///` doc comments to all 18 public
