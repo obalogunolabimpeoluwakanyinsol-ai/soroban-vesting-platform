@@ -1018,6 +1018,50 @@ mod tests {
         let _ = stranger;
     }
 
+    // ── Constructor guards ────────────────────────────────────────────────────
+
+    /// The constructor must panic with "decimals too large" when `decimals`
+    /// exceeds 18.  Registering the contract with `decimals = 19` exercises
+    /// the guard on line ~84 of lib.rs.
+    #[test]
+    #[should_panic(expected = "decimals too large")]
+    fn test_constructor_rejects_decimals_too_large() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let admin = Address::generate(&env);
+        // 19 > 18 — this must panic before any storage is written.
+        env.register(
+            TokenContract,
+            (
+                admin.clone(),
+                String::from_str(&env, "Bad Token"),
+                String::from_str(&env, "BAD"),
+                19u32,
+                0i128,
+            ),
+        );
+    }
+
+    /// The constructor must accept `decimals = 18` (the boundary, not too large).
+    #[test]
+    fn test_constructor_accepts_decimals_at_boundary() {
+        let env = Env::default();
+        env.mock_all_auths();
+        let admin = Address::generate(&env);
+        let contract_id = env.register(
+            TokenContract,
+            (
+                admin.clone(),
+                String::from_str(&env, "Boundary Token"),
+                String::from_str(&env, "BND"),
+                18u32,
+                0i128,
+            ),
+        );
+        let token = TokenContractClient::new(&env, &contract_id);
+        assert_eq!(token.decimals(), 18);
+    }
+
     // ── Overflow guards ───────────────────────────────────────────────────────
 
     /// Minting i128::MAX into a non-zero balance overflows the per-account

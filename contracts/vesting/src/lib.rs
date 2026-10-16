@@ -327,7 +327,8 @@ impl VestingContract {
             .get(&ADMIN)
             .expect("not initialized");
         env.storage().instance().set(&ADMIN, &new_admin);
-        env.events().publish((EVT_ADM_XFER,), (old_admin, new_admin));
+        env.events()
+            .publish((EVT_ADM_XFER,), (old_admin, new_admin));
     }
 
     // ── Read functions ─────────────────────────────────────────────────────
