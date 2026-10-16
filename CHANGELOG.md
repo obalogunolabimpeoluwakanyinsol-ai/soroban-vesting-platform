@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Tests — 2026-10-16
+
+- contracts/vesting/src/lib.rs: added `test_revoke_before_cliff` (#56).
+  Creates a schedule with `cliff_duration=100` / `total_duration=200` /
+  `total_amount=100_000`, advances ledger time to `start + 50` (halfway
+  through the cliff, zero tokens vested), then calls `revoke()`.  Asserts:
+  return value `== 100_000` (all unvested), beneficiary balance `== 0`,
+  recipient balance `== 100_000`, and `schedule.status == Revoked`.
+  Also fixed a pre-existing unused-variable lint warning in
+  `test_revoke_cei_state_and_balances`. All 54 vesting tests pass.
+
 ### Changed — 2026-10-16
 
 - contracts/token/src/lib.rs: added `///` doc comments to all 18 public

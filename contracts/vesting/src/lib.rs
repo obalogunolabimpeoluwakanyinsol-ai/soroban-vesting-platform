@@ -327,7 +327,8 @@ impl VestingContract {
             .get(&ADMIN)
             .expect("not initialized");
         env.storage().instance().set(&ADMIN, &new_admin);
-        env.events().publish((EVT_ADM_XFER,), (old_admin, new_admin));
+        env.events()
+            .publish((EVT_ADM_XFER,), (old_admin, new_admin));
     }
 
     // ── Read functions ─────────────────────────────────────────────────────
@@ -864,6 +865,76 @@ mod tests {
         assert_eq!(sched.status, ScheduleStatus::Revoked);
     }
 
+    // ── revoke before cliff: 0 vested, 100% returned to recipient ────────────
+
+    /// When revoke() is called before the cliff period has elapsed, zero tokens
+    /// have vested.  The entire total_amount must be returned to the recipient
+    /// and the beneficiary receives nothing.
+    ///
+    /// Schedule: cliff_duration=100, total_duration=200, total_amount=100_000.
+    /// Revoke at t = start + 50 (halfway through the cliff, nothing vested).
+    ///
+    /// Expected:
+    ///   - return value == total_amount (100_000)
+    ///   - beneficiary balance == 0
+    ///   - recipient balance == 100_000
+    ///   - schedule.status == ScheduleStatus::Revoked
+    #[test]
+    fn test_revoke_before_cliff() {
+        let (env, vesting_id, _admin, beneficiary, funder) = setup();
+        let token = new_token(&env, &funder, 100_000);
+        let vesting = VestingContractClient::new(&env, &vesting_id);
+        let recipient = Address::generate(&env); // treasury / unvested-token recipient
+        let start = env.ledger().timestamp();
+
+        let id = vesting.create_schedule(&CreateScheduleParams {
+            from: funder.clone(),
+            beneficiary: beneficiary.clone(),
+            token_address: token.clone(),
+            total_amount: 100_000,
+            start_time: start,
+            cliff_duration: 100, // cliff of 100 seconds
+            total_duration: 200,
+        });
+
+        // Advance to t = start + 50 — halfway through the cliff, nothing vested yet.
+        env.ledger().with_mut(|l| l.timestamp = start + 50);
+
+        // Verify claimable is 0 before calling revoke.
+        assert_eq!(vesting.get_claimable(&id), 0);
+
+        let returned = vesting.revoke(&id, &recipient);
+
+        // All tokens are unvested → entire amount returned to recipient.
+        assert_eq!(
+            returned, 100_000,
+            "expected all 100_000 returned as unvested"
+        );
+
+        // Beneficiary received nothing (zero vested, zero paid out).
+        let token_client = soroban_sdk::token::Client::new(&env, &token);
+        assert_eq!(
+            token_client.balance(&beneficiary),
+            0,
+            "beneficiary should receive 0 tokens when revoked before cliff"
+        );
+
+        // Recipient received the full unvested amount.
+        assert_eq!(
+            token_client.balance(&recipient),
+            100_000,
+            "recipient should receive full total_amount"
+        );
+
+        // Schedule is marked Revoked.
+        let sched = vesting.get_schedule(&id);
+        assert_eq!(
+            sched.status,
+            ScheduleStatus::Revoked,
+            "schedule status must be Revoked"
+        );
+    }
+
     // ── claim after revoke must error with ScheduleNotActive ─────────────────
 
     #[test]
@@ -1157,7 +1228,7 @@ mod tests {
     //  - balances sum to total_amount (conservation)
     #[test]
     fn test_revoke_cei_state_and_balances() {
-        let (env, vesting_id, admin, beneficiary, funder) = setup();
+        let (env, vesting_id, _admin, beneficiary, funder) = setup();
         let token = new_token(&env, &funder, 120_000);
         let vesting = VestingContractClient::new(&env, &vesting_id);
         let treasury = Address::generate(&env);
