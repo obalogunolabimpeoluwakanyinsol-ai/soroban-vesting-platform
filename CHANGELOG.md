@@ -9,13 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Tests — 2026-10-16
 
-- contracts/token/src/lib.rs: added `test_constructor_rejects_decimals_too_large`
-  (#67) — a `#[should_panic(expected = "decimals too large")]` test that
-  registers `TokenContract` with `decimals = 19`. Confirms the guard
-  `if decimals > 18 { panic!("decimals too large") }` fires before any
-  storage is written. Also added `test_constructor_accepts_decimals_at_boundary`
-  to verify `decimals = 18` succeeds (boundary edge case). No behaviour changes;
-  all existing tests continue to pass.
+- backend/src/routes/vesting.test.js: expanded test coverage for
+  `GET /api/vesting/beneficiary/:addr` and `GET /api/vesting/count` (#76).
+  Added 9 new tests across the two describe blocks:
+  - `GET /beneficiary/:addr`: correct beneficiary address reflected in
+    response, `scheduleIds` is an array, `contractId` present, different
+    address values work, `contractId` query-param override honoured.
+  - `GET /count`: `success: true`, `count` is a number, `contractId` present,
+    `contractId` query-param override honoured.
+  All 61 backend tests pass.
 
 ### Changed — 2026-10-16
 
