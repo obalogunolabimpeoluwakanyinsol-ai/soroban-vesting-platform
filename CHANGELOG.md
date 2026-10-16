@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed — 2026-10-16
 
+- backend/src/routes/vesting.js: removed unused imports `nativeToScVal`,
+  `Address`, `xdr` (from `@stellar/stellar-sdk`) and `simulateContractCall`
+  (from `../services/stellar`) (#79). These were dead-code left over from an
+  incomplete wiring of live contract calls and produced four ESLint
+  `no-unused-vars` warnings in CI. No behaviour changes; all 54 backend tests
+  still pass and `npm run lint` reports zero warnings for `vesting.js`.
+
+### Changed — 2026-10-16
+
 - contracts/token/src/lib.rs: added `///` doc comments to all 18 public
   functions (#95). Each comment states purpose, auth requirement, panic
   conditions, and return value. Covers `__constructor`, `mint`, `burn`,
